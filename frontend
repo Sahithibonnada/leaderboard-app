@@ -1,1 +1,105 @@
+// App.js
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const App = () => {
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [claiming, setClaiming] = useState(false);
+
+  const backendURL = 'http://localhost:5000'; // change if hosted
+
+  // Fetch users on mount
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const res = await axios.get(`${backendURL}/api/users`);
+      setUsers(res.data);
+    };
+    fetchUsers();
+    fetchLeaderboard(); // load leaderboard initially
+  }, []);
+
+  // Fetch leaderboard
+  const fetchLeaderboard = async () => {
+    const res = await axios.get(`${backendURL}/api/users/leaderboard`);
+    setLeaderboard(res.data);
+  };
+
+  // Handle point claim
+  const handleClaim = async () => {
+    if (!selectedUser) return alert('Please select a user');
+    setClaiming(true);
+    try {
+      await axios.post(`${backendURL}/api/claim`, { userId: selectedUser });
+      alert('Points claimed!');
+      fetchLeaderboard(); // refresh leaderboard
+    } catch (err) {
+      alert('Error claiming points');
+    }
+    setClaiming(false);
+  };
+
+  return (
+    <div style={{ padding: 40, fontFamily: 'Arial' }}>
+      <h1>🏆 Leaderboard System</h1>
+
+      {/* User Selector */}
+      <label>
+        <strong>Select User:</strong>
+        <select
+          value={selectedUser}
+          onChange={(e) => setSelectedUser(e.target.value)}
+          style={{ marginLeft: 10 }}
+        >
+          <option value="">-- Choose --</option>
+          {users.map((u) => (
+            <option key={u._id} value={u._id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {/* Claim Button */}
+      <button
+        onClick={handleClaim}
+        disabled={claiming || !selectedUser}
+        style={{
+          marginLeft: 20,
+          padding: '5px 15px',
+          backgroundColor: 'green',
+          color: 'white',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        {claiming ? 'Claiming...' : 'Claim Points'}
+      </button>
+
+      {/* Leaderboard */}
+      <h2 style={{ marginTop: 40 }}>📋 Leaderboard</h2>
+      <table border="1" cellPadding="10" style={{ borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>User</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {leaderboard.map((user, index) => (
+            <tr key={user._id}>
+              <td>{index + 1}</td>
+              <td>{user.name}</td>
+              <td>{user.points}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default App;
 
